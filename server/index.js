@@ -5,6 +5,7 @@ const port = 3002
 const app = express()
 let response = null
 const cors = require('cors')
+require('dotenv').config()
 app.use(cors())
 
 // sending Email
@@ -15,7 +16,8 @@ var transport = nodemailer.createTransport({
 
 	auth: {
 		user: 'haanhnguyen1221@gmail.com',
-		pass: 'nbpfpwrhggvmhsnq'
+		pass:  process.env.PASS
+		
 	}
 })
 
@@ -39,7 +41,7 @@ const params = {
 	convert: 'USD'
 }
 const headers = {
-	'X-CMC_PRO_API_KEY': '5a0d84c5-78e0-4a6b-b9e6-1a7c26fa3f70'
+	'X-CMC_PRO_API_KEY': process.env.KEY
 }
 
 fetchdata = async () => {
