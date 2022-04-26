@@ -5,6 +5,7 @@ const port = 3002
 const app = express()
 let response = null
 const cors = require('cors')
+require('dotenv').config()
 app.use(cors())
 
 // sending Email
@@ -15,61 +16,71 @@ var transport = nodemailer.createTransport({
 
 	auth: {
 		user: 'haanhnguyen1221@gmail.com',
-		pass: 'nbpfpwrhggvmhsnq'
+		pass:  process.env.PASS
+		
 	}
 })
 
-let result = []
-let queue = 0
-let price
 const date = new Date()
-const maillist = ['hjhj199975@gmail.com', ]
+const maillist = ['hjhj199975@gmail.com']
+
+//Bitcoin price
+const Bitcoin_Price_Max = 42000
+const Bitcoin_Price_Min = 39500
+
+//Ethereum price
+const Ethereum_Price_Max = 3200
+const Ethereum_Price_Min = 2800
+
+//Bnb price
+const Bnb_Price_Max = 450
+const Bnb_Price_Min = 400
+
+//config http header
+const params = {
+	convert: 'USD'
+}
+const headers = {
+	'X-CMC_PRO_API_KEY': process.env.KEY
+}
+
 fetchdata = async () => {
 	await axios
 		.get(
 			'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest',
 			{
-				params: {
-					convert: 'USD'
-				},
-				headers: {
-					'X-CMC_PRO_API_KEY': '5a0d84c5-78e0-4a6b-b9e6-1a7c26fa3f70'
-				}
+				params,
+				headers
 			}
-			//eth <= 2800 || eth > 3200
-			//BNB < 400 || BNB > 450
 		)
 		.then((response) => {
 			result = response.data.data
 			result.map((coin) => {
-				var n = coin.quote.USD.price
+				const price = coin.quote.USD.price
 				switch (coin.slug) {
 					case 'bitcoin':
-						price = n.toFixed(0)
-						console.log(`Bitcoin price: ${price} `)
-						if (price <= 39500) {
-							sendEmail(price, 'Bitcoin', 'giảm')
-						} else if (price > 42000) {
-							sendEmail(price, 'Bitcoin', 'tăng')
-						}
+						handle_action(
+							'Bitcoin',
+							price,
+							Bitcoin_Price_Max,
+							Bitcoin_Price_Min
+						)
 						break
 					case 'ethereum':
-						price = n.toFixed(0)
-						console.log('Ethereum price: ', price)
-						if (price <= 2800) {
-							sendEmail(price, 'Ethereum', 'giảm')
-						} else if (price > 3200) {
-							sendEmail(price, 'Ethereum', 'tăng')
-						}
+						handle_action(
+							'Ethereum',
+							price,
+							Ethereum_Price_Max,
+							Ethereum_Price_Min
+						)
 						break
 					case 'bnb':
-						price = n.toFixed(0)
-						console.log('Bnb price: ', price)
-						if (price <= 400) {
-							sendEmail(price, 'Bnb', 'giảm')
-						} else if (price > 450) {
-							sendEmail(price, 'Bnb', 'tăng')
-						}
+						handle_action(
+							'Bnb',
+							price,
+							Bnb_Price_Max,
+							Bnb_Price_Min
+						)
 						break
 					default:
 						break
@@ -96,8 +107,17 @@ function sendEmail(value, coin, slug) {
 	})
 }
 setInterval(() => {
-	// fetchdata()
+	fetchdata()
 }, 10000)
+const handle_action = (coinName, Longprice, Maxprice, Minprice) => {
+	price = Longprice.toFixed(0)
+	console.log(`${coinName} price: ${price} `)
+	if (price <= Minprice) {
+		sendEmail(price, coinName, 'giảm')
+	} else if (price > Maxprice) {
+		sendEmail(price, coinName, 'tăng')
+	}
+}
 // 21600000
 app.listen(port, () =>
 	console.log('Listening to port: http://localhost:' + port)
